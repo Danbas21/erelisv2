@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>143135305604-g5n4h2rqu3jtb442docj3fefq4qq3vs0.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.143135305604-g5n4h2rqu3jtb442docj3fefq4qq3vs0</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCAULhCtcYrjbrCgvVvd8xiu3mAmKPX1_U</string>
+	<key>GCM_SENDER_ID</key>
+	<string>143135305604</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.erelis</string>
+	<key>PROJECT_ID</key>
+	<string>cursos-erelis-8203e</string>
+	<key>STORAGE_BUCKET</key>
+	<string>cursos-erelis-8203e.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:143135305604:ios:57ac4cc335cabe9a9b37d1</string>
+</dict>
+</plist>

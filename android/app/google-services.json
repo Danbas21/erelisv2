@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "143135305604",
+    "project_id": "cursos-erelis-8203e",
+    "storage_bucket": "cursos-erelis-8203e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:143135305604:android:51ba88814c32cb889b37d1",
+        "android_client_info": {
+          "package_name": "com.example.erelis"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "143135305604-apkste2pjak7jui393edbmrv1h9gs9c3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCToNY-7TJY_wO0IWqwjYsq04dmVg2SAqg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "143135305604-apkste2pjak7jui393edbmrv1h9gs9c3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "143135305604-g5n4h2rqu3jtb442docj3fefq4qq3vs0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.erelis"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

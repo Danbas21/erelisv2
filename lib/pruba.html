@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoachShare - Plataforma de Coaching</title>
+    <style>
+        :root {
+            --primary: #0063dc;
+            --secondary: #ff0084;
+            --text: #212121;
+            --light-text: #666666;
+            --background: #f3f5f6;
+            --white: #ffffff;
+            --border: #e8e8e8;
+            --hover: #f2f2f2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--white);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin-right: 25px;
+        }
+
+        .logo-coach {
+            color: var(--primary);
+        }
+
+        .logo-share {
+            color: var(--secondary);
+        }
+
+        .main-nav {
+            display: flex;
+            height: 100%;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            height: 100%;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--light-text);
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            color: var(--text);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .search-container {
+            margin-left: auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 240px;
+            padding: 8px 12px;
+            border-radius: 3px;
+            border: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .user-controls {
+            display: flex;
+            align-items: center;
+            margin-left: 20px;
+        }
+
+        .upload-btn {
+            background-color: var(--primary);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 3px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-right: 12px;
+        }
+
+        .profile-pic {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Hero Section */
+        .hero {
+            background-color: #041E42;
+            color: white;
+            text-align: center;
+            padding: 60px 20px;
+            margin-bottom: 30px;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+
+        .hero p {
+            font-size: 18px;
+            max-width: 700px;
+            margin: 0 auto 25px;
+        }
+
+        .cta-btn {
+            background-color: var(--secondary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 3px;
+            font-size: 16px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        /* Gallery Grid */
+        .gallery-nav {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .gallery-nav-item {
+            margin-right: 20px;
+            font-weight: 500;
+            color: var(--light-text);
+            padding-bottom: 5px;
+            border-bottom: 2px solid transparent;
+        }
+
+        .gallery-nav-item.active,
+        .gallery-nav-item:hover {
+            color: var(--text);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .filters {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            margin-left: 10px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            font-size: 14px;
+            background-color: var(--white);
+            cursor: pointer;
+        }
+
+        .filter-btn:hover {
+            background-color: var(--hover);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 3px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .gallery-img {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            display: block;
+        }
+
+        .gallery-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+            padding: 15px;
+            color: white;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item:hover .gallery-overlay {
+            transform: translateY(0);
+        }
+
+        .gallery-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .gallery-author {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        .author-pic {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        /* Coaches Section */
+        .section-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .coaches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .coach-card {
+            background-color: var(--white);
+            border-radius: 3px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .coach-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .coach-img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+        }
+
+        .coach-info {
+            padding: 15px;
+        }
+
+        .coach-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .coach-specialty {
+            color: var(--light-text);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .coach-stats {
+            display: flex;
+            font-size: 12px;
+            color: var(--light-text);
+        }
+
+        .coach-stat {
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        .coach-stat i {
+            margin-right: 3px;
+        }
+
+        /* Courses Section */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .course-card {
+            background-color: var(--white);
+            border-radius: 3px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .course-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .course-img {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+        }
+
+        .course-info {
+            padding: 15px;
+        }
+
+        .course-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 2px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .tag-leadership {
+            background-color: #e6f7ff;
+            color: #0066cc;
+        }
+
+        .tag-mindfulness {
+            background-color: #f6ffed;
+            color: #52c41a;
+        }
+
+        .tag-productivity {
+            background-color: #fff7e6;
+            color: #fa8c16;
+        }
+
+        .course-title {
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .course-desc {
+            color: var(--light-text);
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .course-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--light-text);
+            font-size: 13px;
+        }
+
+        /* Login Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 200;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            border-radius: 3px;
+            width: 400px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--light-text);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .login-btn {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 3px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .form-footer {
+            text-align: center;
+            font-size: 14px;
+            color: var(--light-text);
+        }
+
+        .form-link {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            color: var(--light-text);
+            font-size: 14px;
+        }
+
+        .divider:before,
+        .divider:after {
+            content: "";
+            flex-grow: 1;
+            height: 1px;
+            background-color: var(--border);
+        }
+
+        .divider span {
+            padding: 0 10px;
+        }
+
+        .social-btn {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            background-color: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .social-btn i {
+            margin-right: 10px;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--white);
+            padding: 40px 0;
+            margin-top: 40px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-gap: 30px;
+        }
+
+        .footer-column h3 {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-link {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: var(--light-text);
+        }
+
+        .footer-link:hover {
+            color: var(--primary);
+        }
+
+        .copyright {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--light-text);
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-inner {
+                height: auto;
+                padding: 10px 20px;
+                flex-wrap: wrap;
+            }
+
+            .logo {
+                margin-bottom: 10px;
+            }
+
+            .main-nav {
+                order: 3;
+                width: 100%;
+                overflow-x: auto;
+                margin-top: 10px;
+            }
+
+            .nav-item {
+                flex-shrink: 0;
+            }
+
+            .search-container {
+                margin-left: 0;
+                margin-right: auto;
+            }
+
+            .search-input {
+                width: 180px;
+            }
+
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+        }
+
+        @media (max-width: 480px) {
+
+            .gallery-grid,
+            .coaches-grid,
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-input {
+                width: 120px;
+            }
+
+            .modal-content {
+                width: 90%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-inner">
+            <a href="#" class="logo">
+                <span class="logo-coach">Coach</span><span class="logo-share">Share</span>
+            </a>
+
+            <nav class="main-nav">
+                <a href="#" class="nav-item active">Inicio</a>
+                <a href="#" class="nav-item">Explorar</a>
+                <a href="#" class="nav-item">Coaches</a>
+                <a href="#" class="nav-item">Programas</a>
+                <a href="#" class="nav-item">Comunidades</a>
+                <a href="#" class="nav-item">Eventos</a>
+            </nav>
+
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="Buscar...">
+            </div>
+
+            <div class="user-controls">
+                <a href="#" class="upload-btn">Compartir</a>
+                <a href="#" id="login-button">Iniciar sesión</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Comparte. Aprende. Crece.</h1>
+        <p>Una plataforma para compartir conocimientos, experiencias y recursos de coaching que impulsarán tu desarrollo
+            personal y profesional.</p>
+        <a href="#" class="cta-btn">Únete ahora</a>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Gallery Section -->
+        <div class="gallery-nav">
+            <a href="#" class="gallery-nav-item active">Destacados</a>
+            <a href="#" class="gallery-nav-item">Más recientes</a>
+            <a href="#" class="gallery-nav-item">Tendencias</a>
+            <a href="#" class="gallery-nav-item">Populares</a>
+
+            <div class="filters">
+                <button class="filter-btn">Categorías ▾</button>
+                <button class="filter-btn">Filtrar ▾</button>
+            </div>
+        </div>
+
+        <div class="gallery-grid">
+            <div class="gallery-item">
+                <img src="/api/placeholder/300/225" alt="Sesión de coaching" class="gallery-img">
+                <div class="gallery-overlay">
+                    <h3 class="gallery-title">Liderazgo consciente en equipos remotos</h3>
+                    <div class="gallery-author">
+                        <img src="/api/placeholder/50/50" alt="Autor" class="author-pic">
+                        <span>Laura Martínez</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-item">
+                <img src="/api/placeholder/300/225" alt="Taller de coaching" class="gallery-img">
+                <div class="gallery-overlay">
+                    <h3 class="gallery-title">Workshop: Comunicación efectiva</h3>
+                    <div class="gallery-author">
+                        <img src="/api/placeholder/50/50" alt="Autor" class="author-pic">
+                        <span>Miguel Sánchez</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-item">
+                <img src="/api/placeholder/300/225" alt="Coaching grupal" class="gallery-img">
+                <div class="gallery-overlay">
+                    <h3 class="gallery-title">5 técnicas de mindfulness para líderes</h3>
+                    <div class="gallery-author">
+                        <img src="/api/placeholder/50/50" alt="Autor" class="author-pic">
+                        <span>Ana Gómez</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-item">
+                <img src="/api/placeholder/300/225" alt="Material de coaching" class="gallery-img">
+                <div class="gallery-overlay">
+                    <h3 class="gallery-title">Canvas de planificación estratégica</h3>
+                    <div class="gallery-author">
+                        <img src="/api/placeholder/50/50" alt="Autor" class="author-pic">
+                        <span>Carlos Ruiz</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-item">
+                <img src="/api/placeholder/300/225" alt="Workshop de coaching" class="gallery-img">
+                <div class="gallery-overlay">
+                    <h3 class="gallery-title">Gestión emocional en entornos laborales</h3>
+                    <div class="gallery-author">
+                        <img src="/api/placeholder/50/50" alt="Autor" class="author-pic">
+                        <span>Elena Flores</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-item">
+                <img src="/api/placeholder/300/225" alt="Herramientas de coaching" class="gallery-img">
+                <div class="gallery-overlay">
+                    <h3 class="gallery-title">Modelo GROW aplicado a ventas</h3>
+                    <div class="gallery-author">
+                        <img src="/api/placeholder/50/50" alt="Autor" class="author-pic">
+                        <span>Javier López</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-item">
+                <img src="/api/placeholder/300/225" alt="Curso de coaching" class="gallery-img">
+                <div class="gallery-overlay">
+                    <h3 class="gallery-title">Diseño de objetivos SMART</h3>
+                    <div class="gallery-author">
+                        <img src="/api/placeholder/50/50" alt="Autor" class="author-pic">
+                        <span>Patricia García</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-item">
+                <img src="/api/placeholder/300/225" alt="Método de coaching" class="gallery-img">
+                <div class="gallery-overlay">
+                    <h3 class="gallery-title">Feedback constructivo en equipos</h3>
+                    <div class="gallery-author">
+                        <img src="/api/placeholder/50/50" alt="Autor" class="author-pic">
+                        <span>Raúl Morales</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coaches Section -->
+        <h2 class="section-title">Coaches Destacados</h2>
+        <div class="coaches-grid">
+            <div class="coach-card">
+                <img src="/api/placeholder/200/200" alt="Coach" class="coach-img">
+                <div class="coach-info">
+                    <h3 class="coach-name">Laura Martínez</h3>
+                    <p class="coach-specialty">Coach Ejecutivo y Liderazgo</p>
+                    <div class="coach-stats">
+                        <div class="coach-stat"><i>👥</i> 2.4k seguidores</div>
+                        <div class="coach-stat"><i>📊</i> 18 cursos</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="coach-card">
+                <img src="/api/placeholder/200/200" alt="Coach" class="coach-img">
+                <div class="coach-info">
+                    <h3 class="coach-name">Carlos Ruiz</h3>
+                    <p class="coach-specialty">Coach de Productividad</p>
+                    <div class="coach-stats">
+                        <div class="coach-stat"><i>👥</i> 1.8k seguidores</div>
+                        <div class="coach-stat"><i>📊</i> 12 cursos</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="coach-card">
+                <img src="/api/placeholder/200/200" alt="Coach" class="coach-img">
+                <div class="coach-info">
+                    <h3 class="coach-name">Ana Gómez</h3>
+                    <p class="coach-specialty">Coach de Mindfulness</p>
+                    <div class="coach-stats">
+                        <div class="coach-stat"><i>👥</i> 3.2k seguidores</div>
+                        <div class="coach-stat"><i>📊</i> 15 cursos</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="coach-card">
+                <img src="/api/placeholder/200/200" alt="Coach" class="coach-img">
+                <div class="coach-info">
+                    <h3 class="coach-name">Miguel Sánchez</h3>
+                    <p class="coach-specialty">Coach de Comunicación</p>
+                    <div class="coach-stats">
+                        <div class="coach-stat"><i>👥</i> 1.6k seguidores</div>
+                        <div class="coach-stat"><i>📊</i> 9 cursos</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="coach-card">
+                <img src="/api/placeholder/200/200" alt="Coach" class="coach-img">
+                <div class="coach-info">
+                    <h3 class="coach-name">Elena Flores</h3>
+                    <p class="coach-specialty">Coach de Inteligencia Emocional</p>
+                    <div class="coach-stats">
+                        <div class="coach-stat"><i>👥</i> 2.1k seguidores</div>
+                        <div class="coach-stat"><i>📊</i> 14 cursos</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Courses Section -->
+        <h2 class="section-title">Programas Populares</h2>
+        <div class="courses-grid">
+            <div class="course-card">
+                <img src="/api/placeholder/300/169" alt="Curso" class="course-img">
+                <div class="course-info">
+                    <span class="course-tag tag-leadership">Liderazgo</span>
+                    <h3 class="course-title">Liderazgo Transformacional</h3>
+                    <p class="course-desc">Aprende a liderar equipos con un enfoque inspirador y orientado al
+                        desarrollo.</p>
+                    <div class="course-meta">
+                        <span>8 módulos • 24 horas</span>
+                        <span>4.9 ★ (124)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="course-card">
+                <img src="/api/placeholder/300/169" alt="Curso" class="course-img">
+                <div class="course-info">
+                    <span class="course-tag tag-mindfulness">Mindfulness</span>
+                    <h3 class="course-title">Mindfulness para Profesionales</h3>
+                    <p class="course-desc">Integra la atención plena en tu día a día para mejorar el bienestar y
+                        rendimiento.</p>
+                    <div class="course-meta">
+                        <span>6 módulos • 18 horas</span>
+                        <span>4.8 ★ (98)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="course-card">
+                <img src="/api/placeholder/300/169" alt="Curso" class="course-img">
+                <div class="course-info">
+                    <span class="course-tag tag-productivity">Productividad</span>
+                    <h3 class="course-title">Gestión Avanzada del Tiempo</h3>
+                    <p class="course-desc">Domina técnicas de planificación y enfoque para maximizar tu productividad.
+                    </p>
+                    <div class="course-meta">
+                        <span>5 módulos • 15 horas</span>
+                        <span>4.7 ★ (156)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>CoachShare</h3>
+                <ul class="footer-links">
+                    <li class="footer-link"><a href="#">Acerca de nosotros</a></li>
+                    <li class="footer-link"><a href="#">Equipo</a></li>
+                    <li class="footer-link"><a href="#">Blog</a></li>
+                    <li class="footer-link"><a href="#">Empleo</a></li>
+                    <li class="footer-link"><a href

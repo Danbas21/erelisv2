@@ -7,7 +7,7 @@ part 'subject_model.g.dart';
 sealed class SubjectModel with _$SubjectModel {
   factory SubjectModel({
     required String id,
-    required String name,
+    required String title,
     required String imageUrl,
     @Default(false) bool isEnabled,
   }) = _SubjectModel;

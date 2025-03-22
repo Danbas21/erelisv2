@@ -117,8 +117,7 @@ class RightSidebar extends StatelessWidget {
   Widget _buildCalendar() {
     // Get current date
     final now = DateTime.now();
-    final currentDay = now.day;
-    final currentMonth = DateFormat('MMMM yyyy').format(now);
+    DateFormat('MMMM yyyy').format(now);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,10 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:erelis/data/models/course_model.dart';
 
 class CoursesFirebaseDataSource {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final String _collectionName = 'courses';
-
   // En un escenario real, estas funciones interactuarían con Firestore
   // Para desarrollo, se han simulado los comportamientos
 

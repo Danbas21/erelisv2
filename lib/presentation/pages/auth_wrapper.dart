@@ -1,10 +1,10 @@
 // lib/screens/auth_wrapper.dart
+import 'package:erelis/features/salon/presentation/pages/salon_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
 
 import 'login_screen.dart';
-import 'dashboard_screen.dart';
 import 'landing_page.dart';
 
 class AuthWrapper extends StatelessWidget {
@@ -32,7 +32,7 @@ class AuthWrapper extends StatelessWidget {
           if (state is Loading) {
             return const LandingPage();
           } else if (state is Authenticated) {
-            return const DashboardScreen();
+            return const SalonScreen();
           } else if (state is Authenticated) {
             // El usuario está autenticado pero aún verificando autorización
             return LoginPage();

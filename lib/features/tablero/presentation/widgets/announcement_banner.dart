@@ -10,11 +10,7 @@ class AnnouncementBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<TableroBloc, TableroState>(
       builder: (context, state) {
-        String announcementText = 'Hola continuemos';
-
-        if (state is Loaded) {
-          announcementText = state.announcement;
-        }
+        if (state is Loaded) {}
 
         //ret Usa pattern matching para Freezed 3 con sealed classes
 

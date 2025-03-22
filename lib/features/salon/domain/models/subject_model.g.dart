@@ -9,7 +9,7 @@ part of 'subject_model.dart';
 _SubjectModel _$SubjectModelFromJson(Map<String, dynamic> json) =>
     _SubjectModel(
       id: json['id'] as String,
-      name: json['name'] as String,
+      title: json['title'] as String,
       imageUrl: json['imageUrl'] as String,
       isEnabled: json['isEnabled'] as bool? ?? false,
     );
@@ -17,7 +17,7 @@ _SubjectModel _$SubjectModelFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$SubjectModelToJson(_SubjectModel instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'name': instance.name,
+      'title': instance.title,
       'imageUrl': instance.imageUrl,
       'isEnabled': instance.isEnabled,
     };

@@ -154,15 +154,6 @@ class LoginPage extends StatelessWidget {
                             Expanded(
                               child: Divider(color: AppColors.divider),
                             ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: Text(
-                                'O continúa con',
-                                style:
-                                    TextStyle(color: AppColors.textSecondary),
-                              ),
-                            ),
                             Expanded(
                               child: Divider(color: AppColors.divider),
                             ),

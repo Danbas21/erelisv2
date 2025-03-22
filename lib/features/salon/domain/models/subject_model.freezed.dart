@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SubjectModel {
   String get id;
-  String get name;
+  String get title;
   String get imageUrl;
   bool get isEnabled;
 
@@ -37,7 +37,7 @@ mixin _$SubjectModel {
         (other.runtimeType == runtimeType &&
             other is SubjectModel &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.name, name) || other.name == name) &&
+            (identical(other.title, title) || other.title == title) &&
             (identical(other.imageUrl, imageUrl) ||
                 other.imageUrl == imageUrl) &&
             (identical(other.isEnabled, isEnabled) ||
@@ -46,11 +46,11 @@ mixin _$SubjectModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, imageUrl, isEnabled);
+  int get hashCode => Object.hash(runtimeType, id, title, imageUrl, isEnabled);
 
   @override
   String toString() {
-    return 'SubjectModel(id: $id, name: $name, imageUrl: $imageUrl, isEnabled: $isEnabled)';
+    return 'SubjectModel(id: $id, title: $title, imageUrl: $imageUrl, isEnabled: $isEnabled)';
   }
 }
 
@@ -60,7 +60,7 @@ abstract mixin class $SubjectModelCopyWith<$Res> {
           SubjectModel value, $Res Function(SubjectModel) _then) =
       _$SubjectModelCopyWithImpl;
   @useResult
-  $Res call({String id, String name, String imageUrl, bool isEnabled});
+  $Res call({String id, String title, String imageUrl, bool isEnabled});
 }
 
 /// @nodoc
@@ -76,7 +76,7 @@ class _$SubjectModelCopyWithImpl<$Res> implements $SubjectModelCopyWith<$Res> {
   @override
   $Res call({
     Object? id = null,
-    Object? name = null,
+    Object? title = null,
     Object? imageUrl = null,
     Object? isEnabled = null,
   }) {
@@ -85,9 +85,9 @@ class _$SubjectModelCopyWithImpl<$Res> implements $SubjectModelCopyWith<$Res> {
           ? _self.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      name: null == name
-          ? _self.name
-          : name // ignore: cast_nullable_to_non_nullable
+      title: null == title
+          ? _self.title
+          : title // ignore: cast_nullable_to_non_nullable
               as String,
       imageUrl: null == imageUrl
           ? _self.imageUrl
@@ -106,7 +106,7 @@ class _$SubjectModelCopyWithImpl<$Res> implements $SubjectModelCopyWith<$Res> {
 class _SubjectModel implements SubjectModel {
   _SubjectModel(
       {required this.id,
-      required this.name,
+      required this.title,
       required this.imageUrl,
       this.isEnabled = false});
   factory _SubjectModel.fromJson(Map<String, dynamic> json) =>
@@ -115,7 +115,7 @@ class _SubjectModel implements SubjectModel {
   @override
   final String id;
   @override
-  final String name;
+  final String title;
   @override
   final String imageUrl;
   @override
@@ -143,7 +143,7 @@ class _SubjectModel implements SubjectModel {
         (other.runtimeType == runtimeType &&
             other is _SubjectModel &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.name, name) || other.name == name) &&
+            (identical(other.title, title) || other.title == title) &&
             (identical(other.imageUrl, imageUrl) ||
                 other.imageUrl == imageUrl) &&
             (identical(other.isEnabled, isEnabled) ||
@@ -152,11 +152,11 @@ class _SubjectModel implements SubjectModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, imageUrl, isEnabled);
+  int get hashCode => Object.hash(runtimeType, id, title, imageUrl, isEnabled);
 
   @override
   String toString() {
-    return 'SubjectModel(id: $id, name: $name, imageUrl: $imageUrl, isEnabled: $isEnabled)';
+    return 'SubjectModel(id: $id, title: $title, imageUrl: $imageUrl, isEnabled: $isEnabled)';
   }
 }
 
@@ -168,7 +168,7 @@ abstract mixin class _$SubjectModelCopyWith<$Res>
       __$SubjectModelCopyWithImpl;
   @override
   @useResult
-  $Res call({String id, String name, String imageUrl, bool isEnabled});
+  $Res call({String id, String title, String imageUrl, bool isEnabled});
 }
 
 /// @nodoc
@@ -185,7 +185,7 @@ class __$SubjectModelCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   $Res call({
     Object? id = null,
-    Object? name = null,
+    Object? title = null,
     Object? imageUrl = null,
     Object? isEnabled = null,
   }) {
@@ -194,9 +194,9 @@ class __$SubjectModelCopyWithImpl<$Res>
           ? _self.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      name: null == name
-          ? _self.name
-          : name // ignore: cast_nullable_to_non_nullable
+      title: null == title
+          ? _self.title
+          : title // ignore: cast_nullable_to_non_nullable
               as String,
       imageUrl: null == imageUrl
           ? _self.imageUrl

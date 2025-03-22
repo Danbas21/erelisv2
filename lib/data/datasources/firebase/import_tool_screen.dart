@@ -283,7 +283,6 @@ class GoogleImporterState extends State<GoogleImporter> {
 
   Future<void> _importGoogleSheet(String spreadsheetId) async {
     if (_client == null) return;
-
     setState(() {
       isLoading = true;
     });
@@ -291,27 +290,120 @@ class GoogleImporterState extends State<GoogleImporter> {
     try {
       final sheetsApi = sheets.SheetsApi(_client!);
       final spreadsheet = await sheetsApi.spreadsheets.get(spreadsheetId);
-
-      // Obtener datos de la primera hoja
-      final sheetTitle = spreadsheet.sheets![0].properties!.title;
-      final range = '$sheetTitle!A1:Z1000';
-
-      final response =
-          await sheetsApi.spreadsheets.values.get(spreadsheetId, range);
-
-      final rows = response.values ?? [];
       final title = spreadsheet.properties!.title ?? 'Sin título';
 
-      // Convertir filas a formato CSV o algo más estructurado para mostrar
-      String content = _formatSheetRows(rows);
+      // Solicitar información del curso
+      final courseInfo = await _requestCourseInfo(context, title);
+      if (courseInfo == null) {
+        // El usuario canceló la importación
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
 
+      // Mostrar diálogo de progreso
+      // ignore: use_build_context_synchronously
+      _showImportProgressDialog(context, 'Hoja de cálculo', title);
+
+      // Obtener ID del curso
+      String courseId = courseInfo['courseId'] ?? '';
+      if (courseId.isEmpty) {
+        // Crear un nuevo curso
+        final courseRef =
+            FirebaseFirestore.instance.collection('courses').doc();
+        courseId = courseRef.id;
+        await courseRef.set({
+          'title': courseInfo['courseName'] ?? title,
+          'description':
+              courseInfo['courseDescription'] ?? 'Curso importado desde Google',
+          'thumbnailUrl': '',
+          'duration': 0,
+          'level': courseInfo['courseLevel'] ?? 'beginner',
+          'tags': courseInfo['courseTags'] ?? [],
+          'isActive': true,
+          'imageUrl': '',
+          'isEnabled': true,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'passingScore': 70,
+          'certificateTemplate': 'template_basic',
+          'enrolledStudents': 0,
+          'completedStudents': 0
+        });
+      }
+
+      // Procesar cada hoja como una unidad independiente
+      int totalHojas = 0;
+      int totalPreguntas = 0;
+
+      for (var sheet in spreadsheet.sheets!) {
+        final sheetTitle = sheet.properties!.title ?? 'Hoja sin título';
+        final sheetId = sheet.properties!.sheetId.toString();
+
+        // Obtener datos de la hoja
+        final range =
+            '$sheetTitle!A1:H1000'; // Ajustar según la estructura esperada
+        final response =
+            await sheetsApi.spreadsheets.values.get(spreadsheetId, range);
+        final rows = response.values ?? [];
+
+        if (rows.isEmpty || rows.length < 2) {
+          continue; // Omitir hojas vacías o sin suficientes datos
+        }
+
+        // Validar que la primera fila contiene los encabezados esperados
+        if (!_validateHeaders(rows[0])) {
+          // Mostrar error y continuar con la siguiente hoja
+          print(
+              'Error: La hoja "$sheetTitle" no tiene los encabezados esperados.');
+          continue;
+        }
+
+        // Crear la unidad en Firestore
+        final unitRef = FirebaseFirestore.instance
+            .collection('courses')
+            .doc(courseId)
+            .collection('units')
+            .doc();
+
+        await unitRef.set({
+          'title': sheetTitle,
+          'description': 'Unidad importada desde Google Sheets',
+          'order': totalHojas + 1, // Asignar orden secuencial
+          'content': 'Contenido generado automáticamente desde Google Sheets',
+          'duration': 30, // Duración estimada en minutos
+          'isActive': true,
+          'hasTest': true,
+          'courseId': courseId
+        });
+
+        // Procesar las preguntas de la hoja
+        int preguntasEnHoja =
+            await _processSheetQuestions(rows, courseId, unitRef.id);
+
+        totalHojas++;
+        totalPreguntas += preguntasEnHoja;
+      }
+
+      // Cerrar diálogo de progreso y finalizar
+      Navigator.of(context).pop();
       setState(() {
         isLoading = false;
       });
 
-      // Aquí puedes mostrar un diálogo con el contenido o guardarlo en Firestore
-      _showImportSuccessDialog(context, 'Hoja de cálculo', title, content);
+      // Mostrar mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Se importaron $totalHojas hojas con un total de $totalPreguntas preguntas'),
+        ),
+      );
     } catch (e) {
+      // En caso de error, cerrar el diálogo
+      if (Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
       setState(() {
         isLoading = false;
       });
@@ -320,6 +412,164 @@ class GoogleImporterState extends State<GoogleImporter> {
         SnackBar(content: Text('Error al importar hoja: $e')),
       );
     }
+  }
+
+// Función para validar los encabezados de la hoja
+  bool _validateHeaders(List<dynamic> headers) {
+    final expectedHeaders = [
+      '#',
+      'Pregunta',
+      'Opción A',
+      'Opción B',
+      'Opción C',
+      'Opción D',
+      'Respuesta Correcta',
+      'Retroalimentación'
+    ];
+
+    // Verificar si todos los encabezados esperados están presentes
+    for (var expected in expectedHeaders) {
+      bool found = false;
+      for (var header in headers) {
+        if (header.toString().trim().toLowerCase() == expected.toLowerCase()) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) return false;
+    }
+
+    return true;
+  }
+
+  Future<int> _processSheetQuestions(
+      List<List<dynamic>> rows, String courseId, String unitId) async {
+    // La primera fila contiene los encabezados
+    final headers = rows[0].map((h) => h.toString().trim()).toList();
+
+    // Obtener índices de cada columna
+    final numIndex = headers.indexWhere((h) => h.toLowerCase() == '#');
+    final questionIndex =
+        headers.indexWhere((h) => h.toLowerCase() == 'pregunta');
+    final optionAIndex =
+        headers.indexWhere((h) => h.toLowerCase() == 'opción a');
+    final optionBIndex =
+        headers.indexWhere((h) => h.toLowerCase() == 'opción b');
+    final optionCIndex =
+        headers.indexWhere((h) => h.toLowerCase() == 'opción c');
+    final optionDIndex =
+        headers.indexWhere((h) => h.toLowerCase() == 'opción d');
+    final correctAnswerIndex =
+        headers.indexWhere((h) => h.toLowerCase() == 'respuesta correcta');
+    final feedbackIndex =
+        headers.indexWhere((h) => h.toLowerCase() == 'retroalimentación');
+
+    int importedQuestions = 0;
+
+    // Procesar cada fila de datos (excepto la primera que contiene encabezados)
+    for (int i = 1; i < rows.length; i++) {
+      final row = rows[i];
+
+      // Verificar que la fila tenga suficientes datos
+      if (row.length <= questionIndex ||
+          row[questionIndex] == null ||
+          row[questionIndex].toString().trim().isEmpty) {
+        continue; // Omitir filas vacías o incompletas
+      }
+
+      // Extraer datos de la pregunta
+      final questionText = row[questionIndex].toString().trim();
+      final options = <Map<String, dynamic>>[];
+
+      // Añadir opciones si están disponibles
+      if (optionAIndex >= 0 &&
+          optionAIndex < row.length &&
+          row[optionAIndex] != null) {
+        options.add({
+          'id': 'optA',
+          'text': row[optionAIndex].toString().trim(),
+          'isCorrect': correctAnswerIndex >= 0 &&
+              correctAnswerIndex < row.length &&
+              row[correctAnswerIndex] != null &&
+              row[correctAnswerIndex].toString().toLowerCase().contains('a')
+        });
+      }
+
+      if (optionBIndex >= 0 &&
+          optionBIndex < row.length &&
+          row[optionBIndex] != null) {
+        options.add({
+          'id': 'optB',
+          'text': row[optionBIndex].toString().trim(),
+          'isCorrect': correctAnswerIndex >= 0 &&
+              correctAnswerIndex < row.length &&
+              row[correctAnswerIndex] != null &&
+              row[correctAnswerIndex].toString().toLowerCase().contains('b')
+        });
+      }
+
+      if (optionCIndex >= 0 &&
+          optionCIndex < row.length &&
+          row[optionCIndex] != null) {
+        options.add({
+          'id': 'optC',
+          'text': row[optionCIndex].toString().trim(),
+          'isCorrect': correctAnswerIndex >= 0 &&
+              correctAnswerIndex < row.length &&
+              row[correctAnswerIndex] != null &&
+              row[correctAnswerIndex].toString().toLowerCase().contains('c')
+        });
+      }
+
+      if (optionDIndex >= 0 &&
+          optionDIndex < row.length &&
+          row[optionDIndex] != null) {
+        options.add({
+          'id': 'optD',
+          'text': row[optionDIndex].toString().trim(),
+          'isCorrect': correctAnswerIndex >= 0 &&
+              correctAnswerIndex < row.length &&
+              row[correctAnswerIndex] != null &&
+              row[correctAnswerIndex].toString().toLowerCase().contains('d')
+        });
+      }
+
+      // Verificar que haya al menos dos opciones y una respuesta correcta
+      bool hasCorrectAnswer = options.any((opt) => opt['isCorrect'] == true);
+      if (options.length < 2 || !hasCorrectAnswer) {
+        continue; // Omitir preguntas sin suficientes opciones o sin respuesta correcta
+      }
+
+      // Extraer retroalimentación si está disponible
+      String explanation = '';
+      if (feedbackIndex >= 0 &&
+          feedbackIndex < row.length &&
+          row[feedbackIndex] != null) {
+        explanation = row[feedbackIndex].toString().trim();
+      }
+
+      // Crear la pregunta en Firestore
+      final questionRef = FirebaseFirestore.instance
+          .collection('courses')
+          .doc(courseId)
+          .collection('units')
+          .doc(unitId)
+          .collection('questions')
+          .doc();
+
+      await questionRef.set({
+        'text': questionText,
+        'type': 'multiple-choice',
+        'points': 10, // Valor predeterminado
+        'options': options,
+        'explanation': explanation,
+        'order': i // Mantener el orden original
+      });
+
+      importedQuestions++;
+    }
+
+    return importedQuestions;
   }
 
   // Función para extraer contenido de un documento Google Docs
@@ -395,9 +645,9 @@ class GoogleImporterState extends State<GoogleImporter> {
         } else if (paragraph.paragraphStyle?.namedStyleType != null) {
           // Detectar encabezados
           String style = paragraph.paragraphStyle!.namedStyleType!;
-          if (style == 'HEADING_1')
+          if (style == 'HEADING_1') {
             prefix = '# ';
-          else if (style == 'HEADING_2')
+          } else if (style == 'HEADING_2')
             prefix = '## ';
           else if (style == 'HEADING_3') prefix = '### ';
         }
@@ -575,73 +825,6 @@ class GoogleImporterState extends State<GoogleImporter> {
     );
   }
 
-  List<Map<String, dynamic>> _extractTemasFromDocContent(String content) {
-    List<Map<String, dynamic>> temas = [];
-
-    // Dividir el contenido por líneas
-    final lines = content.split('\n');
-
-    int currentOrder = 0;
-    String? currentTitle;
-    StringBuffer currentContent = StringBuffer();
-
-    // Expresión regular más robusta para detectar títulos numerados
-    final RegExp tituloPattern = RegExp(
-        r'^(?:(?:Tema|Unidad|Capítulo|Lección)?\s*(\d+)[\.:\)\-]?\s+|\#\s+)(.+)$',
-        caseSensitive: false);
-
-    for (var line in lines) {
-      final match = tituloPattern.firstMatch(line);
-
-      if (match != null) {
-        // Si ya teníamos un tema en proceso, guardarlo
-        if (currentTitle != null && currentTitle.isNotEmpty) {
-          final temaContent = currentContent.toString().trim();
-          if (temaContent.isNotEmpty) {
-            temas.add({
-              'id': 'tema_${currentOrder}', // ID seguro para Firestore
-              'titulo': currentTitle,
-              'contenido': temaContent,
-              'orden': currentOrder,
-            });
-          }
-          currentContent.clear();
-        }
-
-        // Iniciar nuevo tema
-        currentOrder = int.tryParse(match.group(1) ?? '0') ?? ++currentOrder;
-        currentTitle = match.group(2)?.trim() ?? 'Tema $currentOrder';
-      } else if (currentTitle != null) {
-        // Agregar línea al contenido del tema actual
-        currentContent.writeln(line);
-      } else {
-        // Si encontramos contenido antes del primer título, creamos un tema introductorio
-        if (line.trim().isNotEmpty) {
-          if (currentContent.isEmpty) {
-            currentTitle = 'Introducción';
-            currentOrder = 0;
-          }
-          currentContent.writeln(line);
-        }
-      }
-    }
-
-    // Guardar el último tema
-    if (currentTitle != null && currentTitle.isNotEmpty) {
-      final temaContent = currentContent.toString().trim();
-      if (temaContent.isNotEmpty) {
-        temas.add({
-          'id': 'tema_${currentOrder}',
-          'titulo': currentTitle,
-          'contenido': temaContent,
-          'orden': currentOrder,
-        });
-      }
-    }
-
-    return temas;
-  }
-
 // Y actualiza el método SaveToFirestore
 // Versión corregida del método _saveToFirestore
   Future<void> _saveToFirestore(
@@ -663,6 +846,7 @@ class GoogleImporterState extends State<GoogleImporter> {
       }
 
       // Mostrar diálogo de progreso
+      // ignore: use_build_context_synchronously
       _showImportProgressDialog(context, type, title);
 
       // Generar un ID para el curso
@@ -682,6 +866,8 @@ class GoogleImporterState extends State<GoogleImporter> {
           'level': courseInfo['courseLevel'] ?? 'beginner',
           'tags': courseInfo['courseTags'] ?? [],
           'isActive': true,
+          'imageUrl': '',
+          'isEnabled': true,
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
           'passingScore': 70,
@@ -724,7 +910,9 @@ class GoogleImporterState extends State<GoogleImporter> {
             'content': unit['content'],
             'duration': estimatedDuration,
             'isActive': true,
-            'hasTest': false // Por defecto no tiene test
+            'hasTest': false,
+            'courseId': courseId
+            // Por defecto no tiene test
           });
         }
 
@@ -825,7 +1013,7 @@ class GoogleImporterState extends State<GoogleImporter> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(
-                  'Test "${title}" importado correctamente con ${firestoreQuestions.length} preguntas')),
+                  'Test "$title" importado correctamente con ${firestoreQuestions.length} preguntas')),
         );
       }
 
@@ -1078,302 +1266,6 @@ class GoogleImporterState extends State<GoogleImporter> {
               child: const Text('Continuar'),
             ),
           ],
-        );
-      },
-    );
-
-    return result;
-  }
-
-// Método para solicitar información adicional antes de guardar
-  Future<Map<String, dynamic>?> _requestAdditionalInfo(
-      BuildContext context, String type) async {
-    // Controladores para los campos del formulario
-    final TextEditingController courseNameController = TextEditingController();
-    final TextEditingController courseDescController = TextEditingController();
-    final TextEditingController unitOrderController =
-        TextEditingController(text: '1');
-    final TextEditingController unitDescController = TextEditingController();
-    final TextEditingController unitDurationController =
-        TextEditingController(text: '30');
-
-    // Valores para los dropdown
-    String? selectedCourseId;
-    String? selectedUnitId;
-    String selectedLevel = 'beginner';
-    bool hasTest = false;
-
-    // Lista para almacenar cursos y unidades
-    List<DropdownMenuItem<String>> courseItems = [];
-    List<DropdownMenuItem<String>> unitItems = [];
-
-    // Cargar cursos existentes
-    await FirebaseFirestore.instance
-        .collection('courses')
-        .get()
-        .then((snapshot) {
-      courseItems = snapshot.docs.map((doc) {
-        return DropdownMenuItem<String>(
-          value: doc.id,
-          child: Text(doc.data()['title'] ?? 'Sin título'),
-        );
-      }).toList();
-
-      // Añadir opción para nuevo curso
-      courseItems.insert(
-          0,
-          const DropdownMenuItem<String>(
-            value: '',
-            child: Text('-- Crear nuevo curso --'),
-          ));
-    });
-
-    // Función para cargar unidades cuando se selecciona un curso
-    Future<void> loadUnits(String courseId) async {
-      if (courseId.isEmpty) {
-        unitItems = [];
-        return;
-      }
-
-      await FirebaseFirestore.instance
-          .collection('courses')
-          .doc(courseId)
-          .collection('units')
-          .orderBy('order')
-          .get()
-          .then((snapshot) {
-        unitItems = snapshot.docs.map((doc) {
-          return DropdownMenuItem<String>(
-            value: doc.id,
-            child: Text(doc.data()['title'] ?? 'Sin título'),
-          );
-        }).toList();
-
-        // Añadir opción para no asociar a ninguna unidad
-        unitItems.insert(
-            0,
-            const DropdownMenuItem<String>(
-              value: '',
-              child: Text('-- Sin asociar a unidad --'),
-            ));
-      });
-    }
-
-    // Mostrar diálogo según el tipo de contenido
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        bool isNewCourse = true;
-        bool isTestContent = type == 'Hoja de cálculo';
-
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text('Configurar importación de $type'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Selección o creación de curso
-                    const Text('Curso:',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    DropdownButton<String>(
-                      isExpanded: true,
-                      value: selectedCourseId,
-                      hint: const Text('Seleccionar o crear curso'),
-                      items: courseItems,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedCourseId = value;
-                          isNewCourse = value == null || value.isEmpty;
-
-                          // Cargar unidades si se seleccionó un curso existente
-                          if (!isNewCourse) {
-                            loadUnits(value!);
-                          } else {
-                            unitItems = [];
-                            selectedUnitId = null;
-                          }
-                        });
-                      },
-                    ),
-
-                    // Campos para nuevo curso
-                    if (isNewCourse) ...[
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: courseNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nombre del nuevo curso',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: courseDescController,
-                        decoration: const InputDecoration(
-                          labelText: 'Descripción del curso',
-                          border: OutlineInputBorder(),
-                        ),
-                        maxLines: 2,
-                      ),
-                      const SizedBox(height: 10),
-                      const Text('Nivel del curso:'),
-                      DropdownButton<String>(
-                        value: selectedLevel,
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'beginner', child: Text('Principiante')),
-                          DropdownMenuItem(
-                              value: 'intermediate', child: Text('Intermedio')),
-                          DropdownMenuItem(
-                              value: 'advanced', child: Text('Avanzado')),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectedLevel = value ?? 'beginner';
-                          });
-                        },
-                      ),
-                    ],
-
-                    const Divider(height: 30),
-
-                    // Configuración específica según el tipo
-                    if (!isTestContent) ...[
-                      // Configuración para unidades (documentos)
-                      const Text('Configuración de la unidad:',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: unitOrderController,
-                        decoration: const InputDecoration(
-                          labelText: 'Orden en el curso',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: unitDescController,
-                        decoration: const InputDecoration(
-                          labelText: 'Descripción de la unidad',
-                          border: OutlineInputBorder(),
-                        ),
-                        maxLines: 2,
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: unitDurationController,
-                        decoration: const InputDecoration(
-                          labelText: 'Duración estimada (minutos)',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: hasTest,
-                            onChanged: (value) {
-                              setState(() {
-                                hasTest = value ?? false;
-                              });
-                            },
-                          ),
-                          const Text('Esta unidad tiene evaluación'),
-                        ],
-                      ),
-                    ] else if (selectedCourseId != null && !isNewCourse) ...[
-                      // Configuración para tests (hojas de cálculo)
-                      const Text('Asociar test a unidad:',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 10),
-                      DropdownButton<String>(
-                        isExpanded: true,
-                        value: selectedUnitId,
-                        hint: const Text('Seleccionar unidad'),
-                        items: unitItems,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedUnitId = value;
-                          });
-                        },
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Validar campos según el tipo
-                    if (isNewCourse &&
-                        courseNameController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Ingresa un nombre para el curso')),
-                      );
-                      return;
-                    }
-
-                    if (!isTestContent &&
-                        unitOrderController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Ingresa un orden para la unidad')),
-                      );
-                      return;
-                    }
-
-                    // Crear mapa con la información
-                    final Map<String, dynamic> info = {
-                      'courseId': selectedCourseId ?? '',
-                      'isNewCourse': isNewCourse,
-                    };
-
-                    if (isNewCourse) {
-                      info['courseName'] = courseNameController.text.trim();
-                      info['courseDescription'] =
-                          courseDescController.text.trim();
-                      info['courseLevel'] = selectedLevel;
-                      info['courseTags'] = [selectedLevel];
-                    }
-
-                    if (!isTestContent) {
-                      // Info para unidades
-                      info['unitOrder'] =
-                          int.tryParse(unitOrderController.text) ?? 1;
-                      info['unitDescription'] = unitDescController.text.trim();
-                      info['unitDuration'] =
-                          int.tryParse(unitDurationController.text) ?? 30;
-                      info['hasTest'] = hasTest;
-                    } else {
-                      // Info para tests
-                      info['unitId'] = selectedUnitId ?? '';
-                      info['testDescription'] = 'Evaluación importada';
-                      info['timeLimit'] = 15;
-                      info['passingScore'] = 70;
-                      info['maxAttempts'] = 3;
-                      info['shuffleQuestions'] = true;
-                      info['shuffleOptions'] = true;
-                      info['showResultsImmediately'] = true;
-                    }
-
-                    Navigator.pop(context, info);
-                  },
-                  child: const Text('Guardar'),
-                ),
-              ],
-            );
-          },
         );
       },
     );

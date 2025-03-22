@@ -19,10 +19,10 @@ class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
 
   @override
-  _LandingPageState createState() => _LandingPageState();
+  LandingPageState createState() => LandingPageState();
 }
 
-class _LandingPageState extends State<LandingPage> {
+class LandingPageState extends State<LandingPage> {
   // Referencias para la navegación entre secciones
   final Map<String, GlobalKey> _sectionKeys = {
     'hero': GlobalKey(),
@@ -71,7 +71,7 @@ class _LandingPageState extends State<LandingPage> {
       listener: (context, state) {
         if (state is Authenticated) {
           // Navega a la ruta de diagnóstico cuando el usuario está autenticado
-          Navigator.of(context).pushReplacementNamed(AppRoutes.diagnostic);
+          Navigator.of(context).pushReplacementNamed(AppRoutes.salon);
         }
       },
       child: Scaffold(
